@@ -1,9 +1,9 @@
 # 🔑 fast-secrets
 
-A tiny **FastAPI** service for generating random secrets fast — for tests, fixtures
-and local dev. Inspired by the [IntelliJ Developer Tools plugin][plugin], but focused
-purely on **generation**, with a curl-friendly API (great DX) and a minimal, modern web
-UI (no build step) served at `/`.
+A tiny **FastAPI** service for generating random secrets and developer fixtures fast —
+for tests, local dev, API work and debugging. Inspired by the [IntelliJ Developer
+Tools plugin][plugin], DevToys and CyberChef-style utility workflows, with a
+curl-friendly API and a minimal, modern web UI (no build step) served at `/`.
 
 Every value is produced with Python's cryptographically secure
 [`secrets`](https://docs.python.org/3/library/secrets.html) module — never `random`.
@@ -12,13 +12,19 @@ Every value is produced with Python's cryptographically secure
 
 | Category | Generators |
 |----------|------------|
-| **IDs** | UUID (v1 / v4 / v6 / v7), ULID, Nano ID |
+| **IDs** | UUID (v1 / v4 / v6 / v7), ULID, Nano ID, Mongo ObjectId |
 | **Tokens** | Hex token, URL-safe token, Base64 secret, API key (`sk_…`) |
+| **Web/API** | JWT generator, JWT decode, User-Agent, Basic Auth |
+| **Encoders** | Base64 text encode/decode, URL encode/decode |
 | **Passwords** | Password, Random string, Numeric PIN, Passphrase (diceware) |
+| **Fixture data** | Email, IPv4, IPv6, MAC address, SemVer, Lorem ipsum |
+| **Formatters / Text** | JSON format/minify/validate, text case conversion |
 | **Hashing** | MD5 / SHA-1 / SHA-256 / SHA-512, HMAC |
 
 The full option set for each is self-documented at `GET /api/generators` (and in the
 interactive Swagger docs at `/docs`).
+
+Feature selection and User-Agent data-source notes live in [`docs/research.md`](docs/research.md).
 
 ## Run
 
@@ -44,6 +50,15 @@ curl -s 'localhost:8000/api/generate/password?length=24&count=3&format=text'
 
 # A 32-byte hex token
 curl -s 'localhost:8000/api/generate/hex?nbytes=32&format=text'
+
+# A modern weighted User-Agent string
+curl -s 'localhost:8000/api/generate/user_agent?format=text'
+
+# URL-safe Base64 encode text
+curl -s 'localhost:8000/api/generate/base64_text?text=hello&urlsafe=true&format=text'
+
+# Format JSON
+curl -s 'localhost:8000/api/generate/json?text=%7B%22b%22%3A1%2C%22a%22%3A2%7D&format=text'
 
 # One of every generator with defaults
 curl -s localhost:8000/api/all
@@ -83,6 +98,8 @@ or a side-by-side diff, plus a ready-to-copy `unified` diff.
   `.json` / `.csv`.
 - **Generate all** mode — a grid of every generator; check the ones you want and
   generate them in one click.
+- **Developer utilities** — JSON formatting, Base64/URL transforms, JWT decode,
+  Basic Auth, User-Agent strings, text case conversion, and common fixture data.
 - **Text diff** mode — paste two texts and compare them **inline** or **side-by-side**
   (toggle without re-running), with word/char-level highlighting, a similarity summary,
   and "copy unified diff".
@@ -99,7 +116,8 @@ pytest -q
 ```
 
 Covers generator correctness (formats, charset constraints, UUID versions, known hash
-vectors, uniqueness) and every API endpoint.
+vectors, JWT decode, User-Agent variants, fixture ranges, utility round-trips,
+uniqueness) and every API endpoint.
 
 ## Project layout
 

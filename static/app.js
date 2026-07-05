@@ -265,12 +265,13 @@ function buildField(opt, value) {
   } else if (opt.type === "text") {
     input = el("textarea");
     input.value = value ?? "";
-    input.placeholder = "Text to hash…";
+    input.placeholder = opt.placeholder || "Text input…";
   } else {
     input = el("input");
     input.type = opt.type === "int" ? "number" : "text";
     if (opt.type === "int") { if (opt.min != null) input.min = opt.min; if (opt.max != null) input.max = opt.max; }
     input.value = value ?? "";
+    if (opt.placeholder) input.placeholder = opt.placeholder;
   }
   input.dataset.key = opt.key;
   input.dataset.type = opt.type;
