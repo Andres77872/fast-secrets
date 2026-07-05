@@ -1,0 +1,47 @@
+# fast-secrets — example requests (PyCharm / VS Code REST client)
+
+### List every generator + its options (drives the UI)
+GET http://127.0.0.1:8000/api/generators
+Accept: application/json
+
+### Quick UUID (v4) — convenient GET form
+GET http://127.0.0.1:8000/api/generate/uuid
+Accept: application/json
+
+### Five time-sortable UUID v7s
+GET http://127.0.0.1:8000/api/generate/uuid?version=7&count=5
+Accept: application/json
+
+### Password, plain text (one per line — great for scripts)
+GET http://127.0.0.1:8000/api/generate/password?length=24&symbols=true&count=3&format=text
+Accept: text/plain
+
+### Hex token (32 bytes)
+GET http://127.0.0.1:8000/api/generate/hex?nbytes=32
+Accept: application/json
+
+### API key with a custom prefix (POST form for rich options)
+POST http://127.0.0.1:8000/api/generate
+Content-Type: application/json
+
+{ "type": "apikey", "options": { "prefix": "sk_live", "nbytes": 32 }, "count": 2 }
+
+### Generate several at once
+POST http://127.0.0.1:8000/api/generate/batch
+Content-Type: application/json
+
+[
+  { "type": "uuid", "count": 2 },
+  { "type": "ulid", "count": 2 },
+  { "type": "passphrase", "options": { "words": 5 } }
+]
+
+### One of everything (defaults)
+GET http://127.0.0.1:8000/api/all
+Accept: application/json
+
+### SHA-256 of some input
+GET http://127.0.0.1:8000/api/generate/hash?text=hello&algorithm=sha256
+Accept: application/json
+
+###
