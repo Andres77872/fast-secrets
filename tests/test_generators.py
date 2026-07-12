@@ -183,9 +183,20 @@ def test_user_agent_variants():
     firefox = g.user_agent(browser="firefox", platform="tablet")
     assert "Firefox/" in firefox and "Android" in firefox
     safari = g.user_agent(browser="safari", platform="mobile")
-    assert "Version/26.0" in safari and "Mobile/" in safari
+    assert "Version/" in safari and "Mobile/" in safari
     assert g.user_agent(agent_type="crawler")
     assert g.user_agent(agent_type="client")
+
+
+def test_user_agent_sources():
+    sampled = g.user_agent(browser="safari", platform="mobile", source="dataset")
+    assert "iPhone" in sampled and "Version/18.5" in sampled
+
+    templated = g.user_agent(browser="safari", platform="mobile", source="template")
+    assert "Version/26.0" in templated
+
+    with pytest.raises(ValueError):
+        g.user_agent(browser="chrome", platform="tablet", source="dataset")
 
 
 def test_network_and_fixture_generators():

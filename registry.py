@@ -139,13 +139,18 @@ GENERATORS = [
         "id": "user_agent",
         "label": "User-Agent",
         "category": "Web/API",
-        "description": "Modern browser, crawler, or HTTP-client User-Agent string with weighted browser/platform defaults.",
+        "description": "Modern browser, crawler, or HTTP-client User-Agent string from real samples or generated templates.",
         "fn": g.user_agent,
         "options": [
             {"key": "agent_type", "label": "Type", "type": "select", "default": "browser", "choices": [
                 {"value": "browser", "label": "Browser"},
                 {"value": "crawler", "label": "Crawler / bot"},
                 {"value": "client", "label": "HTTP client"},
+            ]},
+            {"key": "source", "label": "Source", "type": "select", "default": "auto", "choices": [
+                {"value": "auto", "label": "Auto real samples"},
+                {"value": "dataset", "label": "Real sample dataset"},
+                {"value": "template", "label": "Generated templates"},
             ]},
             {"key": "browser", "label": "Browser", "type": "select", "default": "weighted", "choices": [
                 {"value": "weighted", "label": "Weighted current mix"},

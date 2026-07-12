@@ -69,6 +69,107 @@ USER_AGENT_PLATFORM_WEIGHTS = [
     ("tablet", 136),
 ]
 
+REAL_USER_AGENT_DATASET = (
+    # Compact sample from fake-useragent's April 2025 JSONL data, sourced from
+    # user-agents.net. The full upstream file is ~3.8 MB, too large for this app.
+    {
+        "browser": "chrome",
+        "platform": "desktop",
+        "weight": 64,
+        "ua": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
+    },
+    {
+        "browser": "chrome",
+        "platform": "desktop",
+        "weight": 51,
+        "ua": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
+    },
+    {
+        "browser": "chrome",
+        "platform": "desktop",
+        "weight": 31,
+        "ua": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
+    },
+    {
+        "browser": "chrome",
+        "platform": "mobile",
+        "weight": 80,
+        "ua": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Mobile Safari/537.36",
+    },
+    {
+        "browser": "safari",
+        "platform": "desktop",
+        "weight": 58,
+        "ua": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15",
+    },
+    {
+        "browser": "safari",
+        "platform": "mobile",
+        "weight": 94,
+        "ua": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Mobile/15E148 Safari/604.1",
+    },
+    {
+        "browser": "safari",
+        "platform": "tablet",
+        "weight": 12,
+        "ua": "Mozilla/5.0 (iPad; CPU OS 18_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Mobile/15E148 Safari/604.1",
+    },
+    {
+        "browser": "edge",
+        "platform": "desktop",
+        "weight": 48,
+        "ua": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36 Edg/137.0.0.0",
+    },
+    {
+        "browser": "edge",
+        "platform": "mobile",
+        "weight": 30,
+        "ua": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Mobile Safari/537.36 EdgA/137.0.0.0",
+    },
+    {
+        "browser": "edge",
+        "platform": "tablet",
+        "weight": 1,
+        "ua": "Mozilla/5.0 (iPad; CPU OS 17_4_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) EdgiOS/134.0.3124.68 Version/17.0 Mobile/15E148 Safari/604.1",
+    },
+    {
+        "browser": "firefox",
+        "platform": "desktop",
+        "weight": 56,
+        "ua": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:139.0) Gecko/20100101 Firefox/139.0",
+    },
+    {
+        "browser": "firefox",
+        "platform": "desktop",
+        "weight": 40,
+        "ua": "Mozilla/5.0 (X11; Linux x86_64; rv:139.0) Gecko/20100101 Firefox/139.0",
+    },
+    {
+        "browser": "firefox",
+        "platform": "mobile",
+        "weight": 32,
+        "ua": "Mozilla/5.0 (Android 10; Mobile; rv:139.0) Gecko/139.0 Firefox/139.0",
+    },
+    {
+        "browser": "samsung",
+        "platform": "mobile",
+        "weight": 51,
+        "ua": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) SamsungBrowser/28.0 Chrome/130.0.0.0 Mobile Safari/537.36",
+    },
+    {
+        "browser": "opera",
+        "platform": "desktop",
+        "weight": 26,
+        "ua": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36 OPR/119.0.0.0",
+    },
+    {
+        "browser": "opera",
+        "platform": "mobile",
+        "weight": 12,
+        "ua": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Mobile Safari/537.36 OPR/90.0.0.0",
+    },
+)
+
 UA_CLIENTS = (
     "curl/{curl_version}",
     "PostmanRuntime/7.{minor}.{patch}",
@@ -111,6 +212,17 @@ def _weighted_choice(items: list[tuple[str, int]]) -> str:
         if pick < upto:
             return value
     return items[-1][0]
+
+
+def _weighted_record(items: list[dict]) -> dict:
+    total = sum(item["weight"] for item in items)
+    pick = secrets.randbelow(total)
+    upto = 0
+    for item in items:
+        upto += item["weight"]
+        if pick < upto:
+            return item
+    return items[-1]
 
 
 def _randint(lo: int, hi: int) -> int:
@@ -531,13 +643,54 @@ def _firefox_user_agent(platform: str) -> str:
     return f"Mozilla/5.0 (Android 16; {mobile}; rv:{version}) Gecko/{version} Firefox/{version}"
 
 
+def _real_user_agent(browser: str, platform: str) -> str | None:
+    matches = [
+        row for row in REAL_USER_AGENT_DATASET
+        if row["browser"] == browser and row["platform"] == platform
+    ]
+    if not matches:
+        return None
+    return _weighted_record(matches)["ua"]
+
+
+def _real_user_agent_from_filters(browser: str, platform: str) -> str | None:
+    matches = list(REAL_USER_AGENT_DATASET)
+    if browser != "weighted":
+        matches = [row for row in matches if row["browser"] == browser]
+    if platform != "weighted":
+        matches = [row for row in matches if row["platform"] == platform]
+    if not matches:
+        return None
+    return _weighted_record(matches)["ua"]
+
+
+def _template_user_agent(browser: str, platform: str, reduced: bool) -> str:
+    if browser == "safari":
+        return _safari_user_agent(platform)
+    if browser == "firefox":
+        return _firefox_user_agent(platform)
+    if browser in ("chrome", "edge", "opera", "samsung"):
+        return _blink_user_agent(browser, platform, reduced)
+    raise ValueError(f"Unsupported browser: {browser}")
+
+
 def user_agent(
     agent_type: str = "browser",
     browser: str = "weighted",
     platform: str = "weighted",
     reduced: bool = True,
+    source: str = "auto",
 ) -> str:
     """Random modern User-Agent string, weighted toward common browsers/platforms."""
+    if agent_type not in ("browser", "crawler", "client"):
+        raise ValueError(f"Unsupported user-agent type: {agent_type}")
+    if browser not in ("weighted", "chrome", "safari", "edge", "firefox", "samsung", "opera"):
+        raise ValueError(f"Unsupported browser: {browser}")
+    if platform not in ("weighted", "desktop", "mobile", "tablet"):
+        raise ValueError(f"Unsupported platform: {platform}")
+    if source not in ("auto", "dataset", "template"):
+        raise ValueError(f"Unsupported user-agent source: {source}")
+
     if agent_type == "crawler":
         return _choice(UA_CRAWLERS)
     if agent_type == "client":
@@ -548,6 +701,12 @@ def user_agent(
             patch=_randint(0, 9),
         )
 
+    if source == "dataset":
+        sampled = _real_user_agent_from_filters(browser, platform)
+        if sampled is None:
+            raise ValueError(f"No real sample for browser={browser}, platform={platform}")
+        return sampled
+
     chosen_platform = _weighted_choice(USER_AGENT_PLATFORM_WEIGHTS) if platform == "weighted" else platform
     browser_weights = USER_AGENT_BROWSER_WEIGHTS
     if chosen_platform == "desktop":
@@ -556,13 +715,13 @@ def user_agent(
 
     if chosen_browser == "samsung":
         chosen_platform = "tablet" if chosen_platform == "tablet" else "mobile"
-    if chosen_browser == "safari":
-        return _safari_user_agent(chosen_platform)
-    if chosen_browser == "firefox":
-        return _firefox_user_agent(chosen_platform)
-    if chosen_browser in ("chrome", "edge", "opera", "samsung"):
-        return _blink_user_agent(chosen_browser, chosen_platform, reduced)
-    raise ValueError(f"Unsupported browser: {browser}")
+
+    if source == "auto":
+        sampled = _real_user_agent(chosen_browser, chosen_platform)
+        if sampled is not None:
+            return sampled
+
+    return _template_user_agent(chosen_browser, chosen_platform, reduced)
 
 
 def ipv4_address(kind: str = "private") -> str:

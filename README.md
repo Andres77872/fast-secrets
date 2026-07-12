@@ -14,7 +14,7 @@ Every value is produced with Python's cryptographically secure
 |----------|------------|
 | **IDs** | UUID (v1 / v4 / v6 / v7), ULID, Nano ID, Mongo ObjectId |
 | **Tokens** | Hex token, URL-safe token, Base64 secret, API key (`sk_…`) |
-| **Web/API** | JWT generator, JWT decode, User-Agent, Basic Auth |
+| **Web/API** | JWT generator, JWT decode, real-sample User-Agent, Basic Auth |
 | **Encoders** | Base64 text encode/decode, URL encode/decode |
 | **Passwords** | Password, Random string, Numeric PIN, Passphrase (diceware) |
 | **Fixture data** | Email, IPv4, IPv6, MAC address, SemVer, Lorem ipsum |
@@ -51,7 +51,7 @@ curl -s 'localhost:8000/api/generate/password?length=24&count=3&format=text'
 # A 32-byte hex token
 curl -s 'localhost:8000/api/generate/hex?nbytes=32&format=text'
 
-# A modern weighted User-Agent string
+# A modern weighted User-Agent string from real samples or generated templates
 curl -s 'localhost:8000/api/generate/user_agent?format=text'
 
 # URL-safe Base64 encode text
