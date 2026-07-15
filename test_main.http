@@ -1,47 +1,70 @@
-# fast-secrets — example requests (PyCharm / VS Code REST client)
+# fast-secrets API v2 examples (JetBrains HTTP Client / VS Code REST Client)
 
-### List every generator + its options (drives the UI)
-GET http://127.0.0.1:8000/api/generators
+@base = http://127.0.0.1:8000
+
+### Health check
+GET {{base}}/healthz
 Accept: application/json
 
-### Quick UUID (v4) — convenient GET form
-GET http://127.0.0.1:8000/api/generate/uuid
+### Typed metadata for all tools
+GET {{base}}/api/tools
 Accept: application/json
 
-### Five time-sortable UUID v7s
-GET http://127.0.0.1:8000/api/generate/uuid?version=7&count=5
-Accept: application/json
-
-### Password, plain text (one per line — great for scripts)
-GET http://127.0.0.1:8000/api/generate/password?length=24&symbols=true&count=3&format=text
-Accept: text/plain
-
-### Hex token (32 bytes)
-GET http://127.0.0.1:8000/api/generate/hex?nbytes=32
-Accept: application/json
-
-### API key with a custom prefix (POST form for rich options)
-POST http://127.0.0.1:8000/api/generate
+### Five time-sortable UUID v7 values
+POST {{base}}/api/tools/uuid/run
 Content-Type: application/json
+Accept: application/json
 
-{ "type": "apikey", "options": { "prefix": "sk_live", "nbytes": 32 }, "count": 2 }
+{
+  "inputs": {},
+  "options": {"version": 7, "uppercase": false, "hyphens": true},
+  "count": 5
+}
 
-### Generate several at once
-POST http://127.0.0.1:8000/api/generate/batch
+### Password policy output as newline-delimited text
+POST {{base}}/api/tools/password_policy/run
 Content-Type: application/json
+Accept: application/x-ndjson
 
-[
-  { "type": "uuid", "count": 2 },
-  { "type": "ulid", "count": 2 },
-  { "type": "passphrase", "options": { "words": 5 } }
-]
+{
+  "inputs": {},
+  "options": {
+    "length": 24,
+    "min_lowercase": 2,
+    "min_uppercase": 2,
+    "min_digits": 2,
+    "min_symbols": 2,
+    "exclude_ambiguous": true
+  },
+  "count": 3
+}
 
-### One of everything (defaults)
-GET http://127.0.0.1:8000/api/all
+### Inspect and verify a JWT (replace token and secret)
+POST {{base}}/api/tools/jwt_verify/run
+Content-Type: application/json
 Accept: application/json
 
-### SHA-256 of some input
-GET http://127.0.0.1:8000/api/generate/hash?text=hello&algorithm=sha256
+{
+  "inputs": {
+    "token": "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1c2VyXzEyMyJ9.invalid",
+    "secret": "replace-me"
+  },
+  "options": {
+    "allowed_algorithms": ["HS256"],
+    "leeway": 30
+  },
+  "count": 1
+}
+
+### Mixed batch (partial failures are returned per item)
+POST {{base}}/api/batch
+Content-Type: application/json
 Accept: application/json
 
-###
+{
+  "requests": [
+    {"tool": "uuid", "inputs": {}, "options": {"version": 7}, "count": 2},
+    {"tool": "hex", "inputs": {}, "options": {"nbytes": 16}, "count": 2},
+    {"tool": "timestamp", "inputs": {"value": "1704067200000"}, "options": {"output_timezones": ["UTC", "America/Mexico_City"]}, "count": 1}
+  ]
+}

@@ -8,13 +8,9 @@ import time
 import uuid as uuidlib
 
 import pytest
-from fastapi.testclient import TestClient
 
-import generators as g
-import registry
-from main import app
-
-client = TestClient(app)
+from fast_secrets import generators as g
+from fast_secrets import registry
 
 
 # ── generators ──────────────────────────────────────────────────────────────
@@ -61,11 +57,14 @@ def test_pin_is_numeric_and_keeps_leading_zeros():
     assert any(p.startswith("0") for p in pins)
 
 
-def test_passphrase():
+def test_passphrase(monkeypatch):
     p = g.passphrase(5, separator=".")
     assert len(p.split(".")) == 5
     cap = g.passphrase(3, capitalize=True)
     assert all(w[0].isupper() for w in cap.split("-"))
+
+    monkeypatch.setattr(g.secrets, "choice", lambda _words: "yo-yo")
+    assert g.passphrase(2, separator=".", capitalize=True) == "Yo-Yo.Yo-Yo"
 
 
 @pytest.mark.parametrize("nbytes", [1, 16, 32, 64])
@@ -244,86 +243,3 @@ def test_registry_coerces_string_options():
 def test_registry_unknown_id():
     with pytest.raises(KeyError):
         registry.generate("nope", {}, 1)
-
-
-# ── API ─────────────────────────────────────────────────────────────────────
-def test_index_serves_html():
-    r = client.get("/")
-    assert r.status_code == 200
-    assert "fast-secrets" in r.text
-
-
-def test_list_generators_metadata():
-    r = client.get("/api/generators")
-    assert r.status_code == 200
-    gens = r.json()["generators"]
-    ids = {x["id"] for x in gens}
-    assert {
-        "uuid", "password", "hex", "ulid", "nanoid", "objectid", "passphrase",
-        "hash", "hmac", "jwt", "jwt_decode", "user_agent", "base64_text",
-        "url_codec", "json", "text_case", "email", "ipv4", "ipv6", "mac",
-        "semver", "lorem", "basic_auth",
-    } <= ids
-    assert all("fn" not in x for x in gens)  # function stripped
-
-
-def test_generate_get_json():
-    r = client.get("/api/generate/uuid?count=3")
-    assert r.status_code == 200
-    body = r.json()
-    assert body["type"] == "uuid" and body["count"] == 3
-    assert len(body["values"]) == 3
-
-
-def test_generate_get_text_format():
-    r = client.get("/api/generate/hex?count=4&format=text")
-    assert r.status_code == 200
-    assert r.headers["content-type"].startswith("text/plain")
-    lines = r.text.strip().splitlines()
-    assert len(lines) == 4
-
-
-def test_generate_get_with_options():
-    r = client.get("/api/generate/password?length=12&symbols=false")
-    val = r.json()["values"][0]
-    assert len(val) == 12
-    assert not any(c in g.SYMBOLS for c in val)
-
-
-def test_generate_get_new_dev_tool_options():
-    r = client.get("/api/generate/user_agent?browser=chrome&platform=desktop")
-    assert r.status_code == 200
-    assert "Chrome/" in r.json()["values"][0]
-    r = client.get("/api/generate/base64_text?text=hello&mode=encode")
-    assert r.status_code == 200
-    assert r.json()["values"] == ["aGVsbG8="]
-
-
-def test_generate_get_unknown_404():
-    assert client.get("/api/generate/bogus").status_code == 404
-
-
-def test_generate_post():
-    r = client.post("/api/generate", json={"type": "apikey", "options": {"prefix": "pk"}, "count": 2})
-    vals = r.json()["values"]
-    assert len(vals) == 2 and all(v.startswith("pk_") for v in vals)
-
-
-def test_generate_batch():
-    r = client.post("/api/generate/batch", json=[
-        {"type": "uuid", "count": 2},
-        {"type": "pin", "options": {"length": 4}, "count": 1},
-        {"type": "bogus"},
-    ])
-    results = r.json()["results"]
-    assert results[0]["count"] == 2
-    assert len(results[1]["values"][0]) == 4
-    assert "error" in results[2]
-
-
-def test_generate_all():
-    r = client.get("/api/all")
-    results = r.json()["results"]
-    ids = {x["type"] for x in results}
-    assert ids == set(registry.REGISTRY.keys())
-    assert all("error" not in x for x in results)

@@ -1,12 +1,8 @@
-"""Tests for the text-diff engine (diffing.py) and the /api/diff endpoint."""
+"""Tests for the browser-local text-diff engine (diffing.py)."""
 
 import pytest
-from fastapi.testclient import TestClient
 
-import diffing
-from main import app
-
-client = TestClient(app)
+from fast_secrets import diffing
 
 
 # ── helpers ──────────────────────────────────────────────────────────────────
@@ -119,40 +115,3 @@ def test_unified_output():
     out = diffing.unified("a\nb\nc", "a\nB\nc")
     assert "@@" in out
     assert "-b" in out and "+B" in out
-
-
-# ── endpoint ─────────────────────────────────────────────────────────────────
-def test_diff_endpoint_basic():
-    r = client.post("/api/diff", json={"text1": "a\nb", "text2": "a\nc"})
-    assert r.status_code == 200
-    body = r.json()
-    assert "rows" in body and "stats" in body and "unified" in body
-
-
-def test_diff_endpoint_identical():
-    r = client.post("/api/diff", json={"text1": "same", "text2": "same"})
-    assert r.json()["stats"]["identical"] is True
-
-
-def test_diff_endpoint_options_honored():
-    r = client.post("/api/diff", json={"text1": "A", "text2": "a", "ignore_case": True})
-    assert r.json()["stats"]["identical"] is True
-
-
-def test_diff_endpoint_empty_body():
-    r = client.post("/api/diff", json={})
-    assert r.status_code == 200
-    assert r.json()["stats"]["identical"] is True
-
-
-def test_diff_endpoint_too_large():
-    big = "x\n" * (diffing.MAX_LINES + 1)
-    r = client.post("/api/diff", json={"text1": big, "text2": "y"})
-    assert r.status_code == 422
-    assert "too large" in r.json()["detail"].lower()
-
-
-def test_diff_endpoint_bad_granularity_falls_back():
-    r = client.post("/api/diff", json={"text1": "ab", "text2": "ac", "granularity": "lines"})
-    assert r.status_code == 200
-    assert r.json()["options"]["granularity"] == "word"
