@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>fast-secrets · API v2</title>
+  <meta name="description" content="Local, CSP-compatible fast-secrets API reference.">
+  <meta name="theme-color" content="#09090b">
+  <link rel="icon" href="/static/icon.svg" type="image/svg+xml">
+  <script src="/static/theme.js"></script>
+  <link rel="stylesheet" href="/static/api-docs.css">
+</head>
+<body>
+  <header class="docs-header">
+    <a class="brand" href="/">🔑 fast-secrets</a>
+    <nav aria-label="API documentation links">
+      <a href="/">Workbench</a>
+      <a href="/openapi.json">OpenAPI JSON</a>
+    </nav>
+  </header>
+  <main>
+    <section class="intro">
+      <p class="eyebrow">HTTP API v2</p>
+      <h1>Explicit server-side automation</h1>
+      <p>The web workbench runs tools in your browser. These endpoints process the JSON you explicitly POST, so use HTTPS and never place secret material in URLs.</p>
+      <div class="limits" aria-label="Public API limits">
+        <span>256 KiB requests</span><span>25 batch items</span><span>1,000 total values</span><span>1 MiB responses</span>
+      </div>
+    </section>
+    <section aria-labelledby="quick-title">
+      <h2 id="quick-title">Quick example</h2>
+      <pre><code>curl -sS http://127.0.0.1:8000/api/tools/uuid/run \
+  -H 'Content-Type: application/json' \
+  -d '{"inputs":{},"options":{"version":7},"count":2}'</code></pre>
+    </section>
+    <section aria-labelledby="endpoint-title">
+      <div class="section-heading">
+        <h2 id="endpoint-title">Endpoints</h2>
+        <span id="status" role="status">Loading OpenAPI…</span>
+      </div>
+      <div id="endpoints" class="endpoints"></div>
+    </section>
+  </main>
+  <script type="module" src="/static/api-docs.js"></script>
+</body>
+</html>
